@@ -26,7 +26,6 @@ source-repository head
 library
   exposed-modules:
       Data.Color
-      Lib
   other-modules:
       Paths_union_color
   hs-source-dirs:
