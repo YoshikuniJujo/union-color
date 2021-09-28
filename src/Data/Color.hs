@@ -18,7 +18,7 @@ module Data.Color (
 	pattern RgbaPremultipliedWord16, rgbaPremultipliedWord16,
 	pattern RgbaPremultipliedDouble, rgbaPremultipliedDouble,
 	-- ** From and To Rgb and Alpha
---	fromRgba,
+	toRgba, fromRgba,
 	-- ** Convert Fractional
 	rgbaRealToFrac ) where
 
@@ -226,14 +226,22 @@ rgbaDouble r g b a
 		Just $ RgbaDouble_ r g b a
 	| otherwise = Nothing
 
-{-
-fromRgba :: Rgba d -> (Rgb d, Alpha d)
+fromRgba :: (Eq d, Fractional d) => Rgba d -> (Rgb d, Alpha d)
 fromRgba = \case
 	RgbaWord8_ r g b a -> (RgbWord8_ r g b, AlphaWord8_ a)
 	RgbaWord16_ r g b a -> (RgbWord16_ r g b, AlphaWord16_ a)
 	RgbaDouble_ r g b a -> (RgbDouble_ r g b, AlphaDouble_ a)
-	RgbPremultipliedWord8_ 
-	-}
+	RgbaPremultipliedWord8_ r g b a -> (RgbWord8_ r' g' b', AlphaWord8_ a')
+		where [r', g', b', a'] = unPremultipliedWord8 (r, g, b, a)
+	RgbaPremultipliedWord16_ r g b a -> (RgbWord16_ r' g' b', AlphaWord16_ a')
+		where [r', g', b', a'] = unPremultipliedWord16 (r, g, b, a)
+	RgbaPremultipliedDouble_ r g b a -> (RgbDouble_ r' g' b', AlphaDouble_ a')
+		where [r', g', b', a'] = unPremultipliedDouble (r, g, b, a)
+
+toRgba :: RealFrac d => Rgb d -> Alpha d -> Rgba d
+toRgba (RgbWord8_ r g b) (AlphaWord8 a) = RgbaWord8 r g b a
+toRgba (RgbWord16_ r g b) (AlphaWord16 a) = RgbaWord16 r g b a
+toRgba (RgbDouble_ r g b) (AlphaDouble a) = RgbaDouble_ r g b a
 
 rgbaRealToFrac :: (Real d, Fractional d') => Rgba d -> Rgba d'
 rgbaRealToFrac = \case
