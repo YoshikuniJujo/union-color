@@ -38,7 +38,7 @@ fromAlphaWord8 = \case
 	AlphaWord16_ a -> fromIntegral $ a `shiftR` 8
 	AlphaDouble_ a -> cDoubleToWord8 a
 
-{-# COMPLETE RgbWord16 #-}
+{-# COMPLETE AlphaWord16 #-}
 
 pattern AlphaWord16 :: RealFrac d => Word16 -> Alpha d
 pattern AlphaWord16 a <- (fromAlphaWord16 -> a)
