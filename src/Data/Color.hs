@@ -17,6 +17,8 @@ module Data.Color (
 	pattern RgbaPremultipliedWord8, rgbaPremultipliedWord8,
 	pattern RgbaPremultipliedWord16, rgbaPremultipliedWord16,
 	pattern RgbaPremultipliedDouble, rgbaPremultipliedDouble,
+	-- ** From and To Rgb and Alpha
+--	fromRgba,
 	-- ** Convert Fractional
 	rgbaRealToFrac ) where
 
@@ -199,10 +201,10 @@ fromRgbaWord16 = \case
 
 {-# COMPLETE RgbaDouble #-}
 
-pattern RgbaDouble :: Fractional d => d -> d -> d -> d -> Rgba d
+pattern RgbaDouble :: (Eq d, Fractional d) => d -> d -> d -> d -> Rgba d
 pattern RgbaDouble r g b a <- (fromRgbaDouble -> (r, g, b, a))
 
-fromRgbaDouble :: Fractional d => Rgba d -> (d, d, d, d)
+fromRgbaDouble :: (Eq d, Fractional d) => Rgba d -> (d, d, d, d)
 fromRgbaDouble = \case
 	RgbaWord8_ r g b a -> (r', g', b', a')
 		where [r', g', b', a'] = word8ToCDouble <$> [r, g, b, a]
@@ -223,6 +225,15 @@ rgbaDouble r g b a
 	| from0to1 r && from0to1 g && from0to1 b && from0to1 a =
 		Just $ RgbaDouble_ r g b a
 	| otherwise = Nothing
+
+{-
+fromRgba :: Rgba d -> (Rgb d, Alpha d)
+fromRgba = \case
+	RgbaWord8_ r g b a -> (RgbWord8_ r g b, AlphaWord8_ a)
+	RgbaWord16_ r g b a -> (RgbWord16_ r g b, AlphaWord16_ a)
+	RgbaDouble_ r g b a -> (RgbDouble_ r g b, AlphaDouble_ a)
+	RgbPremultipliedWord8_ 
+	-}
 
 rgbaRealToFrac :: (Real d, Fractional d') => Rgba d -> Rgba d'
 rgbaRealToFrac = \case
@@ -279,7 +290,7 @@ unPremultipliedWord8 :: (Word8, Word8, Word8, Word8) -> [Word8]
 unPremultipliedWord8 (
 	fromIntegral -> r, fromIntegral -> g,
 	fromIntegral -> b, fromIntegral -> a ) = fromIntegral <$> [
-		r * 0xff `div` a, g * 0xff `div` a, b * 0xff `div` a,
+		r * 0xff `div'` a, g * 0xff `div'` a, b * 0xff `div'` a,
 		a :: Word16 ]
 
 {-# COMPLETE RgbaPremultipliedWord16 #-}
@@ -312,10 +323,10 @@ unPremultipliedWord16 :: (Word16, Word16, Word16, Word16) -> [Word16]
 unPremultipliedWord16 (
 	fromIntegral -> r, fromIntegral -> g,
 	fromIntegral -> b, fromIntegral -> a ) = fromIntegral <$> [
-		r * 0xffff `div` a, g * 0xffff `div` a, b * 0xff `div` a,
+		r * 0xffff `div'` a, g * 0xffff `div'` a, b * 0xff `div'` a,
 		a :: Word32 ]
 
-pattern RgbaPremultipliedDouble :: Fractional d => d -> d -> d -> d -> Rgba d
+pattern RgbaPremultipliedDouble :: (Eq d, Fractional d) => d -> d -> d -> d -> Rgba d
 pattern RgbaPremultipliedDouble r g b a <-
 	(fromRgbaPremultipliedDouble -> (r, g, b, a))
 
@@ -325,11 +336,19 @@ rgbaPremultipliedDouble r g b a
 		0 <= a && a <= 1 = Just $ RgbaPremultipliedDouble_ r g b a
 	| otherwise = Nothing
 
-fromRgbaPremultipliedDouble :: Fractional d => Rgba d -> (d, d, d, d)
+fromRgbaPremultipliedDouble :: (Eq d, Fractional d) => Rgba d -> (d, d, d, d)
 fromRgbaPremultipliedDouble = toPremultipliedDouble . fromRgbaDouble
 
 toPremultipliedDouble :: Fractional d => (d, d, d, d) -> (d, d, d, d)
 toPremultipliedDouble (r, g, b, a) = (r * a, g * a, b * a, a)
 
-unPremultipliedDouble :: Fractional d => (d, d, d, d) -> [d]
-unPremultipliedDouble (r, g, b, a) = [r / a, g / a, b / a, a]
+unPremultipliedDouble :: (Eq d, Fractional d) => (d, d, d, d) -> [d]
+unPremultipliedDouble (r, g, b, a) = [r ./. a, g ./. a, b ./. a, a]
+
+div' :: Integral n => n -> n -> n
+0 `div'` 0 = 0
+a `div'` b = a `div` b
+
+(./.) :: (Eq a, Fractional a) => a -> a -> a
+0 ./. 0 = 0
+a ./. b = a / b
