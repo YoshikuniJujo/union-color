@@ -3,6 +3,9 @@
 {-# OPTIONS_GHC -Wall -fno-warn-tabs #-}
 
 module Data.Color (
+	-- * Alpha
+	Alpha, pattern AlphaWord8, pattern AlphaWord16, pattern AlphaDouble,
+	alphaDouble, alphaRealToFrac,
 	-- * RGB
 	Rgb, pattern RgbWord8, pattern RgbWord16, pattern RgbDouble,
 	rgbDouble, rgbRealToFrac,
@@ -19,6 +22,55 @@ module Data.Color (
 
 import Data.Bits
 import Data.Word
+
+data Alpha d = AlphaWord8_ Word8 | AlphaWord16_ Word16 | AlphaDouble_ d
+	deriving Show
+
+{-# COMPLETE AlphaWord8 #-}
+
+pattern AlphaWord8 :: RealFrac d => Word8 -> Alpha d
+pattern AlphaWord8 a <- (fromAlphaWord8 -> a)
+	where AlphaWord8 = AlphaWord8_
+
+fromAlphaWord8 :: RealFrac d => Alpha d -> Word8
+fromAlphaWord8 = \case
+	AlphaWord8_ a -> a
+	AlphaWord16_ a -> fromIntegral $ a `shiftR` 8
+	AlphaDouble_ a -> cDoubleToWord8 a
+
+{-# COMPLETE RgbWord16 #-}
+
+pattern AlphaWord16 :: RealFrac d => Word16 -> Alpha d
+pattern AlphaWord16 a <- (fromAlphaWord16 -> a)
+	where AlphaWord16 = AlphaWord16_
+
+fromAlphaWord16 :: RealFrac d => Alpha d -> Word16
+fromAlphaWord16 = \case
+	AlphaWord8_ (fromIntegral -> a) -> a `shiftL` 8 .|. a
+	AlphaWord16_ a -> a
+	AlphaDouble_ a -> cDoubleToWord16 a
+
+{-# COMPLETE AlphaDouble #-}
+
+pattern AlphaDouble :: Fractional d => d -> (Alpha d)
+pattern AlphaDouble a <- (fromAlphaDouble -> a)
+
+fromAlphaDouble :: Fractional d => Alpha d -> d
+fromAlphaDouble = \case
+	AlphaWord8_ a -> word8ToCDouble a
+	AlphaWord16_ a -> word16ToCDouble a
+	AlphaDouble_ a -> a
+
+alphaDouble :: (Ord d, Num d) => d -> Maybe (Alpha d)
+alphaDouble a
+	| from0to1 a = Just $ AlphaDouble_ a
+	| otherwise = Nothing
+
+alphaRealToFrac :: (Real d, Fractional d') => Alpha d -> Alpha d'
+alphaRealToFrac = \case
+	AlphaWord8_ a -> AlphaWord8_ a
+	AlphaWord16_ a -> AlphaWord16_ a
+	AlphaDouble_ a -> AlphaDouble_ $ realToFrac a
 
 data Rgb d
 	= RgbWord8_ Word8 Word8 Word8
