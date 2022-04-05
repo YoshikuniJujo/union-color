@@ -4,6 +4,7 @@
 module Data.Color (
 	-- * Alpha
 	Alpha, pattern AlphaWord8, pattern AlphaWord16, pattern AlphaWord32,
+	pattern AlphaInt32, alphaInt32,
 	pattern AlphaDouble, alphaDouble, alphaRealToFrac,
 	-- * RGB
 	Rgb, pattern RgbWord8, pattern RgbWord16, pattern RgbWord32,

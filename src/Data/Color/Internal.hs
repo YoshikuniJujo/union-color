@@ -5,6 +5,7 @@
 module Data.Color.Internal (
 	-- * Alpha
 	Alpha(..), pattern AlphaWord8, pattern AlphaWord16, pattern AlphaWord32,
+	pattern AlphaInt32, alphaInt32,
 	pattern AlphaDouble, alphaDouble, alphaRealToFrac,
 	-- * RGB
 	Rgb(..), pattern RgbWord8, pattern RgbWord16, pattern RgbWord32,
@@ -23,9 +24,13 @@ module Data.Color.Internal (
 	rgbaRealToFrac ) where
 
 import Data.Bits
+import Data.Bool
 import Data.Word
+import Data.Int
 
-data Alpha d = AlphaWord8_ Word8 | AlphaWord16_ Word16 | AlphaWord32_ Word32 | AlphaDouble_ d
+data Alpha d
+	= AlphaWord8_ Word8 | AlphaWord16_ Word16 | AlphaWord32_ Word32
+	| AlphaInt32_ Int32 | AlphaDouble_ d
 	deriving Show
 
 {-# COMPLETE AlphaWord8 #-}
@@ -39,6 +44,7 @@ fromAlphaWord8 = \case
 	AlphaWord8_ a -> a
 	AlphaWord16_ a -> fromIntegral $ a `shiftR` 8
 	AlphaWord32_ a -> fromIntegral $ a `shiftR` 24
+	AlphaInt32_ a -> fromIntegral $ a `shiftR` 23
 	AlphaDouble_ a -> cDoubleToWord8 a
 
 {-# COMPLETE AlphaWord16 #-}
@@ -52,6 +58,7 @@ fromAlphaWord16 = \case
 	AlphaWord8_ (fromIntegral -> a) -> a `shiftL` 8 .|. a
 	AlphaWord16_ a -> a
 	AlphaWord32_ a -> fromIntegral $ a `shiftR` 16
+	AlphaInt32_ a -> fromIntegral $ a `shiftR` 15
 	AlphaDouble_ a -> cDoubleToWord16 a
 
 {-# COMPLETE AlphaWord32 #-}
@@ -66,7 +73,27 @@ fromAlphaWord32 = \case
 		a `shiftL` 24 .|. a `shiftL` 16 .|. a `shiftL` 8 .|. a
 	AlphaWord16_ (fromIntegral -> a) -> a `shiftL` 16 .|. a
 	AlphaWord32_ a -> a
+	AlphaInt32_ (fromIntegral -> a) -> a `shiftL` 1 .|. a `shiftR` 31
 	AlphaDouble_ a -> cDoubleToWord32 a
+
+{-# COMPLETE AlphaInt32 #-}
+
+pattern AlphaInt32 :: RealFrac d => Int32 -> Alpha d
+pattern AlphaInt32 a <- (fromAlphaInt32 -> a)
+
+alphaInt32 :: Int32 -> Maybe (Alpha d)
+alphaInt32 a = bool Nothing (Just $ AlphaInt32_ a) (a >= 0)
+
+fromAlphaInt32 :: RealFrac d => Alpha d -> Int32
+fromAlphaInt32 = \case
+	AlphaWord8_ (fromIntegral -> a) ->
+		a `shiftL` 23 .|. a `shiftL` 15 .|.
+		a `shiftL` 7 .|. a `shiftR` 1
+	AlphaWord16_ (fromIntegral -> a) ->
+		a `shiftL` 15 .|. a `shiftR` 1
+	AlphaWord32_ a -> fromIntegral $ a `shiftR` 1
+	AlphaInt32_ a -> a
+	AlphaDouble_ a -> cDoubleToInt32 a
 
 {-# COMPLETE AlphaDouble #-}
 
@@ -78,6 +105,7 @@ fromAlphaDouble = \case
 	AlphaWord8_ a -> word8ToCDouble a
 	AlphaWord16_ a -> word16ToCDouble a
 	AlphaWord32_ a -> word32ToCDouble a
+	AlphaInt32_ a -> int32ToCDouble a
 	AlphaDouble_ a -> a
 
 alphaDouble :: (Ord d, Num d) => d -> Maybe (Alpha d)
@@ -90,6 +118,7 @@ alphaRealToFrac = \case
 	AlphaWord8_ a -> AlphaWord8_ a
 	AlphaWord16_ a -> AlphaWord16_ a
 	AlphaWord32_ a -> AlphaWord32_ a
+	AlphaInt32_ a -> AlphaInt32_ a
 	AlphaDouble_ a -> AlphaDouble_ $ realToFrac a
 
 data Rgb d
@@ -367,6 +396,9 @@ cDoubleToWord16 = round . (* 0xffff)
 cDoubleToWord32 :: RealFrac d => d -> Word32
 cDoubleToWord32 = round . (* 0xffffffff)
 
+cDoubleToInt32 :: RealFrac d => d -> Int32
+cDoubleToInt32 = round . (* 0x7fffffff)
+
 word8ToCDouble :: Fractional d => Word8 -> d
 word8ToCDouble = (/ 0xff) . fromIntegral
 
@@ -375,6 +407,9 @@ word16ToCDouble = (/ 0xffff) . fromIntegral
 
 word32ToCDouble :: Fractional d => Word32 -> d
 word32ToCDouble = (/ 0xffffffff) . fromIntegral
+
+int32ToCDouble :: Fractional d => Int32 -> d
+int32ToCDouble = (/ 0x7fffffff) . fromIntegral
 
 from0to1 :: (Ord d, Num d) => d -> Bool
 from0to1 n = 0 <= n && n <= 1
