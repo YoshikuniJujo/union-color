@@ -3,15 +3,15 @@
 
 module Data.Color (
 	-- * Alpha
-	Alpha, pattern AlphaWord8, pattern AlphaWord16, pattern AlphaDouble,
-	alphaDouble, alphaRealToFrac,
+	Alpha, pattern AlphaWord8, pattern AlphaWord16, pattern AlphaWord32,
+	pattern AlphaDouble, alphaDouble, alphaRealToFrac,
 	-- * RGB
-	Rgb, pattern RgbWord8, pattern RgbWord16, pattern RgbDouble,
-	rgbDouble, rgbRealToFrac,
+	Rgb, pattern RgbWord8, pattern RgbWord16, pattern RgbWord32,
+	pattern RgbDouble, rgbDouble, rgbRealToFrac,
 	-- * RGBA
 	-- ** Straight
-	Rgba, pattern RgbaWord8, pattern RgbaWord16, pattern RgbaDouble,
-	rgbaDouble,
+	Rgba, pattern RgbaWord8, pattern RgbaWord16, pattern RgbaWord32,
+	pattern RgbaDouble, rgbaDouble,
 	-- ** Premultiplied
 	pattern RgbaPremultipliedWord8, rgbaPremultipliedWord8,
 	pattern RgbaPremultipliedWord16, rgbaPremultipliedWord16,
