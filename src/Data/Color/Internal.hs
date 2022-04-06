@@ -9,6 +9,7 @@ module Data.Color.Internal (
 	pattern AlphaDouble, alphaDouble, alphaRealToFrac,
 	-- * RGB
 	Rgb(..), pattern RgbWord8, pattern RgbWord16, pattern RgbWord32,
+	pattern RgbInt32, rgbInt32,
 	pattern RgbDouble, rgbDouble, rgbRealToFrac,
 	-- * RGBA
 	-- ** Straight
@@ -73,7 +74,7 @@ fromAlphaWord32 = \case
 		a `shiftL` 24 .|. a `shiftL` 16 .|. a `shiftL` 8 .|. a
 	AlphaWord16_ (fromIntegral -> a) -> a `shiftL` 16 .|. a
 	AlphaWord32_ a -> a
-	AlphaInt32_ (fromIntegral -> a) -> a `shiftL` 1 .|. a `shiftR` 31
+	AlphaInt32_ (fromIntegral -> a) -> a `shiftL` 1 .|. a `shiftR` 30
 	AlphaDouble_ a -> cDoubleToWord32 a
 
 {-# COMPLETE AlphaInt32 #-}
@@ -125,6 +126,7 @@ data Rgb d
 	= RgbWord8_ Word8 Word8 Word8
 	| RgbWord16_ Word16 Word16 Word16
 	| RgbWord32_ Word32 Word32 Word32
+	| RgbInt32_ Int32 Int32 Int32
 	| RgbDouble_ d d d
 	deriving Show
 
@@ -145,6 +147,10 @@ fromRgbWord8 = \case
 		fromIntegral $ r `shiftR` 24,
 		fromIntegral $ g `shiftR` 24,
 		fromIntegral $ b `shiftR` 24 )
+	RgbInt32_ r g b -> (
+		fromIntegral $ r `shiftR` 23,
+		fromIntegral $ g `shiftR` 23,
+		fromIntegral $ b `shiftR` 23 )
 	RgbDouble_ r g b ->
 		let [r', g', b'] = cDoubleToWord8 <$> [r, g, b] in (r', g', b')
 
@@ -163,6 +169,10 @@ fromRgbWord16 = \case
 		fromIntegral $ r `shiftR` 16,
 		fromIntegral $ g `shiftR` 16,
 		fromIntegral $ b `shiftR` 16 )
+	RgbInt32_ r g b -> (
+		fromIntegral $ r `shiftR` 15,
+		fromIntegral $ g `shiftR` 15,
+		fromIntegral $ b `shiftR` 15 )
 	RgbDouble_ r g b ->
 		let [r', g', b'] = cDoubleToWord16 <$> [r, g, b] in (r', g', b')
 
@@ -182,8 +192,42 @@ fromRgbWord32 = \case
 		-> (	r `shiftL` 16 .|. r, g `shiftL` 16 .|. g,
 			b `shiftL` 16 .|. b )
 	RgbWord32_ r g b -> (r, g, b)
+	RgbInt32_ (fromIntegral -> r) (fromIntegral -> g) (fromIntegral -> b) ->
+		(	r `shiftL` 1 .|. r `shiftR` 30,
+			g `shiftL` 1 .|. g `shiftR` 30,
+			b `shiftL` 1 .|. b `shiftR` 30 )
 	RgbDouble_ r g b ->
 		let [r', g', b'] = cDoubleToWord32 <$> [r, g, b] in (r', g', b')
+
+{-# COMPLETE RgbInt32 #-}
+
+pattern RgbInt32 :: RealFrac d => Int32 -> Int32 -> Int32 -> Rgb d
+pattern RgbInt32 r g b <- (fromRgbInt32 -> (r, g, b))
+
+rgbInt32 :: Int32 -> Int32 -> Int32 -> Maybe (Rgb d)
+rgbInt32 r g b
+	| r < 0 || g < 0 || b < 0 = Nothing
+	| otherwise = Just $ RgbInt32_ r g b
+
+fromRgbInt32 :: RealFrac d => Rgb d -> (Int32, Int32, Int32)
+fromRgbInt32 = \case
+	RgbWord8_ (fromIntegral -> r) (fromIntegral -> g) (fromIntegral -> b) ->
+		(	r `shiftL` 23 .|. r `shiftL` 15 .|.
+			r `shiftL` 7 .|. r `shiftR` 1,
+			g `shiftL` 23 .|. g `shiftL` 15 .|.
+			g `shiftL` 7 .|. g `shiftR` 1,
+			b `shiftL` 23 .|. b `shiftL` 15 .|.
+			b `shiftL` 7 .|. b `shiftR` 1 )
+	RgbWord16_ (fromIntegral -> r) (fromIntegral -> g) (fromIntegral -> b) ->
+		(	r `shiftL` 15 .|. r `shiftR` 1,
+			g `shiftL` 15 .|. g `shiftR` 1,
+			b `shiftL` 15 .|. b `shiftR` 1 )
+	RgbWord32_ r g b -> (
+		fromIntegral $ r `shiftR` 1, fromIntegral $ g `shiftR` 1,
+		fromIntegral $ b `shiftR` 1 )
+	RgbInt32_ r g b -> (r, g, b)
+	RgbDouble_ r g b ->
+		let [r', g', b'] = cDoubleToInt32 <$> [r, g, b] in (r', g', b')
 
 {-# COMPLETE RgbDouble #-}
 
@@ -198,6 +242,8 @@ fromRgbDouble = \case
 		let [r', g', b'] = word16ToCDouble <$> [r, g, b] in (r', g', b')
 	RgbWord32_ r g b ->
 		let [r', g', b'] = word32ToCDouble <$> [r, g, b] in (r', g', b')
+	RgbInt32_ r g b ->
+		let [r', g', b'] = int32ToCDouble <$> [r, g, b] in (r', g', b')
 	RgbDouble_ r g b -> (r, g, b)
 
 rgbDouble :: (Ord d, Num d) => d -> d -> d -> Maybe (Rgb d)
@@ -210,6 +256,7 @@ rgbRealToFrac = \case
 	RgbWord8_ r g b -> RgbWord8_ r g b
 	RgbWord16_ r g b -> RgbWord16_ r g b
 	RgbWord32_ r g b -> RgbWord32_ r g b
+	RgbInt32_ r g b -> RgbInt32_ r g b
 	RgbDouble_ r g b -> RgbDouble_ r' g' b'
 		where [r', g', b'] = realToFrac <$> [r, g, b]
 
