@@ -8,10 +8,12 @@ module Data.Color (
 	pattern AlphaDouble, alphaDouble, alphaRealToFrac,
 	-- * RGB
 	Rgb, pattern RgbWord8, pattern RgbWord16, pattern RgbWord32,
+	pattern RgbInt32, rgbInt32,
 	pattern RgbDouble, rgbDouble, rgbRealToFrac,
 	-- * RGBA
 	-- ** Straight
 	Rgba, pattern RgbaWord8, pattern RgbaWord16, pattern RgbaWord32,
+	pattern RgbaInt32, rgbaInt32,
 	pattern RgbaDouble, rgbaDouble,
 	-- ** Premultiplied
 	pattern RgbaPremultipliedWord8, rgbaPremultipliedWord8,
