@@ -152,8 +152,9 @@ fromRgbWord8 = \case
 		fromIntegral $ r `shiftR` 23,
 		fromIntegral $ g `shiftR` 23,
 		fromIntegral $ b `shiftR` 23 )
-	RgbDouble_ r g b ->
-		let [r', g', b'] = cDoubleToWord8 <$> [r, g, b] in (r', g', b')
+	RgbDouble_ r g b -> case cDoubleToWord8 <$> [r, g, b] of
+		[r', g', b'] -> (r', g', b')
+		_ -> error "never occur"
 
 {-# COMPLETE RgbWord16 #-}
 
@@ -616,8 +617,9 @@ toPremultipliedDouble (r, g, b, a) = (r * a, g * a, b * a, a)
 unPremultipliedDouble :: (Eq d, Fractional d) => (d, d, d, d) -> [d]
 unPremultipliedDouble (r, g, b, a) = [r ./. a, g ./. a, b ./. a, a]
 
-div' :: Integral n => n -> n -> n
+div' :: (Integral n, Bounded n) => n -> n -> n
 0 `div'` 0 = 0
+_ `div'` 0 = maxBound
 a `div'` b = a `div` b
 
 (./.) :: (Eq a, Fractional a) => a -> a -> a
