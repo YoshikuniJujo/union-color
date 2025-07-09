@@ -35,12 +35,20 @@ module Data.Color (
 
 	-- ** Convert Fractional
 
-	rgbaRealToFrac
+	rgbaRealToFrac,
 
 	-- * GRAY SCALE
+
+	Gray,
+	pattern GrayWord1, grayWord1, pattern GrayWord2, grayWord2,
+	pattern GrayWord4, grayWord4,
+	pattern GrayWord8, pattern GrayWord16, pattern GrayWord32,
+	pattern GrayInt32,
+	pattern GrayDouble, grayDouble
 
 	-- * GRAY SCALE WITH ALPHA
 
 	) where
 
 import Data.Color.Internal
+import Data.Color.Internal.GrayScale
