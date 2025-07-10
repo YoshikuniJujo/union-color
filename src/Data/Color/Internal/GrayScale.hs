@@ -10,6 +10,8 @@ import Data.Int
 
 import Data.Color.Internal
 
+-- GRAY
+
 data Gray d
 	= GrayWord1_ Word8 | GrayWord2_ Word8 | GrayWord4_ Word8
 	| GrayWord8_ Word8 | GrayWord16_ Word16 | GrayWord32_ Word32
@@ -287,3 +289,13 @@ word32ToFrac = (/ 0xffffffff) . fromIntegral
 
 int32ToFrac :: Fractional d => Int32 -> d
 int32ToFrac = (/ 0x7fffffff) . fromIntegral
+
+-- GRAY ALPHA
+
+data GrayAlpha d
+	= GrayAlphaWord8_ Word8 Word8
+	| GrayAlphaWord16_ Word16 Word16
+	| GrayAlphaWord32_ Word32 Word32
+	| GrayAlphaInt32_ Int32 Int32
+	| GrayAlphaDouble_ d d
+	deriving Show
