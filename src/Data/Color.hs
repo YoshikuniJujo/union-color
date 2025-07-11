@@ -44,9 +44,26 @@ module Data.Color (
 	pattern GrayWord4, grayWord4,
 	pattern GrayWord8, pattern GrayWord16, pattern GrayWord32,
 	pattern GrayInt32,
-	pattern GrayDouble, grayDouble
+	pattern GrayDouble, grayDouble,
+
+	-- ** Convert Fractional
+
+	grayRealToFrac,
 
 	-- * GRAY SCALE WITH ALPHA
+
+	GrayAlpha,
+	pattern GrayAlphaWord8, pattern GrayAlphaWord16,
+	pattern GrayAlphaWord32, pattern GrayAlphaInt32,
+	pattern GrayAlphaDouble, grayAlphaDouble,
+
+	-- ** From and To Gray and Alpha
+
+	toGrayAlpha, fromGrayAlpha,
+
+	-- ** Convert Fractional
+
+	grayAlphaRealToFrac
 
 	) where
 

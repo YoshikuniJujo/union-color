@@ -269,6 +269,17 @@ grayToFrac = \case
 	GrayInt32_ x -> int32ToFrac x
 	GrayDouble_ x -> x
 
+grayRealToFrac :: (Real d, Fractional d') => Gray d -> Gray d'
+grayRealToFrac = \case
+	GrayWord1_ x -> GrayWord1_ x
+	GrayWord2_ x -> GrayWord2_ x
+	GrayWord4_ x -> GrayWord4_ x
+	GrayWord8_ x -> GrayWord8_ x
+	GrayWord16_ x -> GrayWord16_ x
+	GrayWord32_ x -> GrayWord32_ x
+	GrayInt32_ x -> GrayInt32_ x
+	GrayDouble_ x -> GrayDouble_ $ realToFrac x
+
 word1ToFrac :: Fractional d => Word8 -> d
 word1ToFrac = fromIntegral
 
@@ -299,3 +310,118 @@ data GrayAlpha d
 	| GrayAlphaInt32_ Int32 Int32
 	| GrayAlphaDouble_ d d
 	deriving Show
+
+{-# COMPLETE GrayAlphaWord8 #-}
+
+pattern GrayAlphaWord8 :: RealFrac d => Word8 -> Word8 -> GrayAlpha d
+pattern GrayAlphaWord8 x a <- (fromGrayAlphaWord8 -> (x, a)) where
+	GrayAlphaWord8 = GrayAlphaWord8_
+
+fromGrayAlphaWord8 :: RealFrac d => GrayAlpha d -> (Word8, Word8)
+fromGrayAlphaWord8 = \case
+	GrayAlphaWord8_ x a -> (x, a)
+	GrayAlphaWord16_ x a ->
+		(fromIntegral $ x `shiftR` 8, fromIntegral $ a `shiftR` 8)
+	GrayAlphaWord32_ x a ->
+		(fromIntegral $ x `shiftR` 24, fromIntegral $ a `shiftR` 24)
+	GrayAlphaInt32_ x a ->
+		(fromIntegral $ x `shiftR` 23, fromIntegral $ a `shiftR` 23)
+	GrayAlphaDouble_ x a -> (fracToWord8 x, fracToWord8 a)
+
+{-# COMPLETE GrayAlphaWord16 #-}
+
+pattern GrayAlphaWord16 :: RealFrac d => Word16 -> Word16 -> GrayAlpha d
+pattern GrayAlphaWord16 x a <- (fromGrayAlphaWord16 -> (x, a)) where
+	GrayAlphaWord16 = GrayAlphaWord16_
+
+fromGrayAlphaWord16 :: RealFrac d => GrayAlpha d -> (Word16, Word16)
+fromGrayAlphaWord16 = \case
+	GrayAlphaWord8_ (fromIntegral -> x) (fromIntegral -> a) ->
+		(x `shiftL` 8 .|. x, a `shiftL` 8 .|. a)
+	GrayAlphaWord16_ x a -> (x, a)
+	GrayAlphaWord32_ x a ->
+		(fromIntegral $ x `shiftR` 16, fromIntegral $ a `shiftR` 16)
+	GrayAlphaInt32_ x a ->
+		(fromIntegral $ x `shiftR` 15, fromIntegral $ a `shiftR` 15)
+	GrayAlphaDouble_ x a -> (fracToWord16 x, fracToWord16 a)
+
+{-# COMPLETE GrayAlphaWord32 #-}
+
+pattern GrayAlphaWord32 :: RealFrac d => Word32 -> Word32 -> GrayAlpha d
+pattern GrayAlphaWord32 x a <- (fromGrayAlphaWord32 -> (x, a)) where
+	GrayAlphaWord32 = GrayAlphaWord32_
+
+fromGrayAlphaWord32 :: RealFrac d => GrayAlpha d -> (Word32, Word32)
+fromGrayAlphaWord32 = \case
+	GrayAlphaWord8_ (fromIntegral -> x) (fromIntegral -> a) -> (
+		x `shiftL` 24 .|. x `shiftL` 16 .|. x `shiftL` 8 .|. x,
+		a `shiftL` 24 .|. a `shiftL` 16 .|. a `shiftL` 8 .|. a )
+	GrayAlphaWord16_ (fromIntegral -> x) (fromIntegral -> a) ->
+		(x `shiftL` 16 .|. x, a `shiftL` 16 .|. a)
+	GrayAlphaWord32_ x a -> (x, a)
+	GrayAlphaInt32_ (fromIntegral -> x) (fromIntegral -> a) ->
+		(x `shiftL` 1 .|. x `shiftR` 31, a `shiftL` 1 .|. a `shiftR` 31)
+	GrayAlphaDouble_ x a -> (fracToWord32 x, fracToWord32 a)
+
+{-# COMPLETE GrayAlphaInt32 #-}
+
+pattern GrayAlphaInt32 :: RealFrac d => Int32 -> Int32 -> GrayAlpha d
+pattern GrayAlphaInt32 x a <- (fromGrayAlphaInt32 -> (x, a)) where
+	GrayAlphaInt32 = GrayAlphaInt32_
+
+fromGrayAlphaInt32 :: RealFrac d => GrayAlpha d -> (Int32, Int32)
+fromGrayAlphaInt32 = \case
+	GrayAlphaWord8_ (fromIntegral -> x) (fromIntegral -> a) -> (
+		x `shiftL` 23 .|. x `shiftL` 15 .|.
+		x `shiftL` 7 .|. x `shiftR` 1,
+		a `shiftL` 23 .|. a `shiftL` 15 .|.
+		a `shiftL` 7 .|. x `shiftR` 1 )
+	GrayAlphaWord16_ (fromIntegral -> x) (fromIntegral -> a) -> (
+		x `shiftL` 15 .|. x `shiftR` 1,
+		a `shiftL` 15 .|. x `shiftR` 1 )
+	GrayAlphaWord32_ x a ->
+		(fromIntegral $ x `shiftR` 1, fromIntegral $ a `shiftR` 1)
+	GrayAlphaInt32_ x a -> (x, a)
+	GrayAlphaDouble_ x a -> (fracToInt32 x, fracToInt32 a)
+
+{-# COMPLETE GrayAlphaDouble #-}
+
+pattern GrayAlphaDouble :: RealFrac d => d -> d -> GrayAlpha d
+pattern GrayAlphaDouble x a <- (grayAlphaToFrac -> (x, a))
+
+grayAlphaDouble :: RealFrac d => d -> d -> Maybe (GrayAlpha d)
+grayAlphaDouble x a
+	| 0 <= x && x <= 1, 0 <= a && a <= 1 = Just $ GrayAlphaDouble_ x a
+	| otherwise = Nothing
+
+grayAlphaToFrac :: RealFrac d => GrayAlpha d -> (d, d)
+grayAlphaToFrac = \case
+	GrayAlphaWord8_ x a -> (word8ToFrac x, word8ToFrac a)
+	GrayAlphaWord16_ x a -> (word16ToFrac x, word16ToFrac a)
+	GrayAlphaWord32_ x a -> (word32ToFrac x, word32ToFrac a)
+	GrayAlphaInt32_ x a -> (int32ToFrac x, int32ToFrac a)
+	GrayAlphaDouble_ x a -> (x, a)
+
+fromGrayAlpha :: GrayAlpha d -> (Gray d, Alpha d)
+fromGrayAlpha = \case
+	(GrayAlphaWord8_ x a) -> (GrayWord8_ x, AlphaWord8_ a)
+	(GrayAlphaWord16_ x a) -> (GrayWord16_ x, AlphaWord16_ a)
+	(GrayAlphaWord32_ x a) -> (GrayWord32_ x, AlphaWord32_ a)
+	(GrayAlphaInt32_ x a) -> (GrayInt32_ x, AlphaInt32_ a)
+	(GrayAlphaDouble_ x a) -> (GrayDouble_ x, AlphaDouble_ a)
+
+toGrayAlpha :: RealFrac d => Gray d -> Alpha d -> GrayAlpha d
+toGrayAlpha (GrayWord8_ x) (AlphaWord8 a) = GrayAlphaWord8 x a
+toGrayAlpha (GrayWord16_ x) (AlphaWord16 a) = GrayAlphaWord16 x a
+toGrayAlpha (GrayWord32_ x) (AlphaWord32 a) = GrayAlphaWord32 x a
+toGrayAlpha (GrayInt32_ x) (AlphaInt32 a) = GrayAlphaInt32 x a
+toGrayAlpha (GrayDouble_ x) (AlphaDouble a) = GrayAlphaDouble_ x a
+toGrayAlpha (GrayWord8 x) (AlphaWord8 a) = GrayAlphaWord8 x a
+
+grayAlphaRealToFrac :: (Real d, Fractional d') => GrayAlpha d -> GrayAlpha d'
+grayAlphaRealToFrac = \case
+	GrayAlphaWord8_ x a -> GrayAlphaWord8_ x a
+	GrayAlphaWord16_ x a -> GrayAlphaWord16_ x a
+	GrayAlphaWord32_ x a -> GrayAlphaWord32_ x a
+	GrayAlphaInt32_ x a -> GrayAlphaInt32_ x a
+	GrayAlphaDouble_ x a -> GrayAlphaDouble_ (realToFrac x) (realToFrac a)
